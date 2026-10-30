@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OneShot Redux: Editor</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon32.png" alt="" width="22" height="22">
+      <span>OneShot Redux</span>
+    </div>
+    <div class="actions">
+      <button id="aboutBtn" class="btn ghost" type="button">About</button>
+      <button id="copyBtn" class="btn" type="button" disabled>Copy</button>
+      <button id="downloadBtn" class="btn primary" type="button" disabled>Download PNG</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="card" aria-label="Quote card preview"></canvas>
+      </div>
+      <p class="hint" id="hint">Drag across the text to highlight it. Click a highlight to remove it.</p>
+      <div class="empty" id="empty" hidden>
+        <h1>No capture found</h1>
+        <p id="emptyMsg">Use the toolbar button or the keyboard shortcut on any page to capture an area.</p>
+      </div>
+    </section>
+
+    <aside class="panel" id="panel">
+      <div class="group">
+        <h2>Background</h2>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Color presets"></div>
+        <label class="field">
+          <span class="label-row"><span>Color</span><span class="muted" id="hueValue"></span></span>
+          <input type="range" id="hue" class="hue-slider" min="0" max="360" step="0.5" aria-label="Background color">
+        </label>
+        <div class="segmented" role="radiogroup" aria-label="Tone">
+          <button type="button" data-tone="deep" role="radio">Deep</button>
+          <button type="button" data-tone="rich" role="radio">Rich</button>
+          <button type="button" data-tone="soft" role="radio">Soft</button>
+        </div>
+        <label class="check"><input type="checkbox" id="drift"> Color drift</label>
+      </div>
+
+      <div class="group">
+        <h2>Texture</h2>
+        <div class="texture-grid" role="radiogroup" aria-label="Background texture">
+          <button type="button" role="radio" data-texture="none">None</button>
+          <button type="button" role="radio" data-texture="grain">Grain</button>
+          <button type="button" role="radio" data-texture="dots">Dots</button>
+          <button type="button" role="radio" data-texture="grid">Grid</button>
+          <button type="button" role="radio" data-texture="binary">Binary</button>
+          <button type="button" role="radio" data-texture="circuit">Circuit</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Highlight</h2>
+        <p class="ocr-status" id="ocrStatus" data-state="idle"><span class="spinner" aria-hidden="true"></span><span id="ocrText">Preparing text detection…</span></p>
+        <label class="check"><input type="checkbox" id="snapWords"> Snap to words</label>
+        <label class="field">
+          <span class="label-row"><span>Strength</span></span>
+          <input type="range" id="hlAlpha" min="0.2" max="0.9" step="0.05" aria-label="Highlight strength">
+        </label>
+        <div class="row">
+          <button type="button" class="btn small" id="undoBtn">Undo</button>
+          <button type="button" class="btn small" id="clearBtn">Clear all</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Source</h2>
+        <label class="field">
+          <span class="label-row"><span>Headline</span></span>
+          <textarea id="titleInput" rows="3" spellcheck="true"></textarea>
+        </label>
+        <label class="field">
+          <span class="label-row"><span>Domain</span></span>
+          <input type="text" id="domainInput" spellcheck="false">
+        </label>
+        <label class="check"><input type="checkbox" id="showFavicon"> Show site icon</label>
+      </div>
+
+      <div class="group">
+        <h2>Card</h2>
+        <label class="check"><input type="checkbox" id="tighten"> Trim to content</label>
+        <label class="check"><input type="checkbox" id="torn"> Torn paper edges</label>
+        <label class="check"><input type="checkbox" id="showQr"> QR code to the source</label>
+      </div>
+
+      <p class="foot muted">Tip: <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undoes the last highlight.</p>
+    </aside>
+  </main>
+
+  <dialog id="about" aria-labelledby="aboutTitle">
+    <div class="about-head">
+      <img src="icons/icon128.png" alt="" width="56" height="56">
+      <div>
+        <h1 id="aboutTitle">OneShot <i>Redux</i></h1>
+        <p class="muted" id="aboutVersion"></p>
+      </div>
+    </div>
+    <p>Turn any part of a webpage into a beautiful, shareable quote card.</p>
+    <p>Made by <b>Subrahmanyam KVJ</b>.</p>
+    <p class="muted">Inspired by OneShot (2015) by Jason Goldman and Ian Ownbey, designed by Daniel Zarick.</p>
+    <p class="muted">Free and open source under the MIT License. Text detection by Tesseract.js; QR codes by qrcode-generator.
+      Everything runs on your computer. Nothing is uploaded.</p>
+    <div class="about-actions"><button id="aboutClose" class="btn primary" type="button">Done</button></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="lib/qrcode/qrcode.js"></script>
+  <script src="lib/tesseract/tesseract.min.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

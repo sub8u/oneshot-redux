@@ -1,0 +1,12 @@
+/* OneShot Redux: the host element only. All visible UI lives inside a
+   shadow root so page styles can't break it (and it can't break the page). */
+#oneshot-redux-host {
+  all: initial !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
+}
