@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OneShot Redux: Library</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="library.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="wordmark">OneShot <i>Redux</i></span><span class="crumb">Library</span></div>
+    <label class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search the quotes you saved…" autocomplete="off" spellcheck="false" aria-label="Search your Library">
+      <kbd>/</kbd>
+    </label>
+    <div class="actions">
+      <button id="exportBtn" class="btn" type="button" disabled>Export all</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="status">
+      <span id="count"></span>
+      <span id="indexing" hidden></span>
+      <span id="usage" class="muted"></span>
+      <label class="switch" title="Save cards you copy or download">
+        <input type="checkbox" id="saveToggle" role="switch">
+        <span class="track" aria-hidden="true"></span>
+        Save new cards
+      </label>
+      <label class="keep">Keep
+        <select id="keepSelect" aria-label="How many cards to keep">
+          <option value="0">all cards</option>
+          <option value="500">newest 500</option>
+          <option value="100">newest 100</option>
+        </select>
+      </label>
+    </div>
+    <div id="keepConfirm" class="confirm" hidden>
+      <span id="keepConfirmText"></span>
+      <button id="keepConfirmYes" class="btn danger" type="button">Remove them</button>
+      <button id="keepConfirmNo" class="btn" type="button">Cancel</button>
+    </div>
+    <div id="grid" class="grid" role="list"></div>
+    <div id="empty" class="empty" hidden>
+      <h1>Your Library is empty</h1>
+      <p>Every card you copy or download is saved here automatically, with its text, so you can find a quote again even when you've forgotten where you read it.</p>
+    </div>
+    <div id="noresults" class="empty" hidden>
+      <h1>No matches</h1>
+      <p>Try fewer words, or part of a word.</p>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="lib/library-db.js"></script>
+  <script src="lib/tesseract/tesseract.min.js"></script>
+  <script src="library.js"></script>
+</body>
+</html>

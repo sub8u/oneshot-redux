@@ -557,10 +557,23 @@
   }
 
   // ---------- Render ----------
+  // The editor's desk and marker take on the card's own colors.
+  let chromeKey = '';
+  function syncChrome(t) {
+    const key = t.bg1 + t.bg2 + t.hl;
+    if (key === chromeKey) return;
+    chromeKey = key;
+    const s = document.documentElement.style;
+    s.setProperty('--ground', t.bg1);
+    s.setProperty('--ground-2', t.bg2);
+    s.setProperty('--marker', String(t.hl).replace(/,\s*[\d.]+\)\s*$/, ', 0.78)'));
+  }
+
   function render(opts = {}) {
     if (!state.img || !state.layout) return;
     const L = state.layout;
     const t = tone();
+    syncChrome(t);
     if (canvas.width !== L.W) canvas.width = L.W;
     if (canvas.height !== L.H) canvas.height = L.H;
 
@@ -808,6 +821,7 @@
       const n = state.ocr.words.length;
       if (n) {
         setOcrStatus('done', `${n} word${n === 1 ? '' : 's'} detected. Click or drag across them.`);
+        markDirty(); // keep the Library's search text current
       } else {
         setOcrStatus('failed', 'No text found. Drag to draw highlights.');
       }
@@ -1075,6 +1089,7 @@
       }
     }
     render();
+    markDirty();
   }
   canvas.addEventListener('pointerup', endInteraction);
   canvas.addEventListener('pointercancel', () => { state.drag = null; state.wordSel = null; render(); });
@@ -1083,11 +1098,13 @@
     if (!state.undoStack.length) { toast('Nothing to undo'); return; }
     state.highlights = state.undoStack.pop();
     render();
+    markDirty();
   }
 
   // ---------- Controls ----------
   let savePrefsTimer = 0;
   function savePrefs() {
+    markDirty();
     clearTimeout(savePrefsTimer);
     savePrefsTimer = setTimeout(() => {
       const prefs = {};
@@ -1255,6 +1272,7 @@
       pushUndo();
       state.highlights = [];
       render();
+      markDirty();
     });
 
     const titleInput = $('titleInput');
@@ -1262,6 +1280,7 @@
     titleInput.addEventListener('input', () => {
       state.title = titleInput.value;
       relayout();
+      markDirty();
     });
 
     const domainInput = $('domainInput');
@@ -1269,12 +1288,25 @@
     domainInput.addEventListener('input', () => {
       state.domain = domainInput.value;
       relayout();
+      markDirty();
     });
 
     bindCheck('showFavicon', () => relayout());
     bindCheck('torn', () => relayout());
     bindCheck('showQr', () => relayout());
     bindCheck('tighten', () => { useTrim(state.tighten); relayout(); });
+    const libBox = $('libSave');
+    libBox.checked = !!libSettings.save;
+    libBox.addEventListener('change', () => {
+      libSettings.save = libBox.checked;
+      chrome.storage.sync.set({ library: libSettings }).catch(() => {});
+    });
+    chrome.storage.onChanged.addListener((ch, area) => {
+      if (area === 'sync' && ch.library) setLibSettings(ch.library.newValue);
+    });
+    $('libraryBtn').addEventListener('click', () => {
+      window.open(chrome.runtime.getURL('library.html'), '_blank');
+    });
     $('aboutBtn').addEventListener('click', () => {
       $('aboutVersion').textContent = 'Version ' + chrome.runtime.getManifest().version;
       $('about').showModal();
@@ -1370,7 +1402,8 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      toast('PNG downloaded');
+      const saved = await saveToLibrary(blob);
+      toast(saved ? 'Downloaded · saved to your Library' : 'PNG downloaded');
     } catch (err) {
       console.error(err);
       toast('Download failed: ' + err.message);
@@ -1380,8 +1413,10 @@
   async function copy() {
     try {
       if (!navigator.clipboard || typeof ClipboardItem === 'undefined') throw new Error('Clipboard not available');
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': exportBlob() })]);
-      toast('Copied to clipboard');
+      const png = exportBlob();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      const saved = await saveToLibrary(await png);
+      toast(saved ? 'Copied · saved to your Library' : 'Copied to clipboard');
     } catch (err) {
       console.error(err);
       toast('Copy failed: ' + err.message);
@@ -1617,6 +1652,116 @@
     }
   }
 
+  // ---------- Library ----------
+  const LIB = self.OSRLibrary || null;
+  let dirtyTimer = 0;
+  // Library settings are global (not per card): { save: bool, keep: 0 = all | N newest }
+  const LIB_DEFAULTS = { save: true, keep: 0 };
+  let libSettings = { ...LIB_DEFAULTS };
+  function setLibSettings(v) {
+    libSettings = { ...LIB_DEFAULTS, ...(v || {}) };
+    const box = document.getElementById('libSave');
+    if (box) box.checked = !!libSettings.save;
+  }
+
+  // Once a card is in the Library, later edits are saved to it automatically.
+  function markDirty() {
+    if (!state.libSaved) return;
+    clearTimeout(dirtyTimer);
+    dirtyTimer = setTimeout(() => {
+      exportBlob().then((b) => saveToLibrary(b)).catch(() => {});
+    }, 1500);
+  }
+
+  function currentPrefs() {
+    const p = {};
+    for (const k of Object.keys(DEFAULT_PREFS)) p[k] = state[k];
+    return p;
+  }
+
+  function fullText() {
+    return state.ocr.words.map((w) => w.text).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // The words under your highlights, in reading order ("…" between separate highlights).
+  function highlightedText() {
+    const ws = state.ocr.words;
+    const inside = (w) => {
+      const cx = (w.x0 + w.x1) / 2, cy = (w.y0 + w.y1) / 2;
+      return state.highlights.some((h) => cx >= h.x && cx <= h.x + h.w && cy >= h.y && cy <= h.y + h.h);
+    };
+    const parts = [];
+    let last = -2;
+    ws.forEach((w, i) => {
+      if (!inside(w)) return;
+      if (parts.length && i !== last + 1) parts.push('…');
+      parts.push(w.text);
+      last = i;
+    });
+    return parts.join(' ');
+  }
+
+  async function makeThumb(blob) {
+    const bm = await createImageBitmap(blob);
+    const w = Math.min(720, bm.width), h = Math.round(bm.height * (w / bm.width));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d');
+    x.imageSmoothingQuality = 'high';
+    x.drawImage(bm, 0, 0, w, h);
+    bm.close && bm.close();
+    return new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
+  }
+
+  async function sourceFromCapture(data) {
+    const image = await (await fetch(data.image)).blob();
+    return {
+      image,
+      url: data.url || '', title: data.title || '', publishedAt: data.publishedAt || '',
+      themeColor: data.themeColor || '', favicon: data.favicon || '',
+      width: data.width, height: data.height, pixelRatio: data.pixelRatio || 1
+    };
+  }
+
+  async function saveToLibrary(cardBlob) {
+    if (!LIB || !state.capture || !cardBlob) return false;
+    // Saving is off: new cards aren't kept, but a card you reopened from the Library still updates.
+    if (!libSettings.save && !state.libSaved) return false;
+    try {
+      const id = state.libId || state.captureId;
+      const existing = await LIB.get(id).catch(() => null);
+      const source = existing && existing.source ? existing.source : await sourceFromCapture(state.capture);
+      const text = fullText();
+      await LIB.put({
+        id,
+        createdAt: existing ? existing.createdAt : Date.now(),
+        updatedAt: Date.now(),
+        url: source.url,
+        title: state.title,
+        domain: state.domain,
+        published: state.published,
+        text: text || (existing && existing.text) || '',
+        highlighted: text ? highlightedText() : ((existing && existing.highlighted) || ''),
+        // The finished card isn't stored: it's re-created exactly from the capture and your edits.
+        thumb: await makeThumb(cardBlob),
+        source,
+        edit: {
+          prefs: currentPrefs(),
+          highlights: state.highlights.map((h) => ({ ...h })),
+          title: state.title,
+          domain: state.domain
+        }
+      });
+      state.libId = id;
+      state.libSaved = true;
+      if (!existing && libSettings.keep > 0) await LIB.prune(libSettings.keep);
+      return true;
+    } catch (err) {
+      console.warn('OneShot Redux: could not save to Library', err);
+      return false;
+    }
+  }
+
   // ---------- Init ----------
   // Shared by the editor and the quick-mode renderer.
   async function prepare(id, data, prefs) {
@@ -1628,6 +1773,8 @@
 
     state.capture = data;
     state.captureId = id;
+    state.libId = null;
+    state.libSaved = false;
     state.seed = hashStr(id);
     state.title = data.title || '';
     state.domain = hostname(data.url);
@@ -1655,14 +1802,37 @@
 
   // Quick mode: this page runs offscreen, renders a finished card on request,
   // and hands back the PNG. No editor UI, no text detection.
+  // Re-create a Library card exactly, from its capture and saved edits.
+  async function renderEntry(entry) {
+    const data = { ...entry.source, image: URL.createObjectURL(entry.source.image) };
+    try {
+      const edit = entry.edit || {};
+      await prepare(entry.id, data, { ...DEFAULT_PREFS, ...(edit.prefs || {}) });
+      state.highlights = Array.isArray(edit.highlights) ? edit.highlights : [];
+      if (typeof edit.title === 'string') state.title = edit.title;
+      if (typeof edit.domain === 'string') state.domain = edit.domain;
+      computeLayout();
+      render({ export: true });
+      return await new Promise((r, j) => canvas.toBlob((b) => (b ? r(b) : j(new Error('Could not render card'))), 'image/png'));
+    } finally {
+      URL.revokeObjectURL(data.image);
+    }
+  }
+
   function startRenderer() {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (!msg || msg.type !== 'OSR_RENDER') return false;
       (async () => {
+        setLibSettings(msg.prefs && msg.prefs.library);
         await prepare(msg.id, msg.data, msg.prefs || {});
         computeLayout();
         render({ export: true });
-        return canvas.toDataURL('image/png');
+        const png = canvas.toDataURL('image/png');
+        // Quick copies go to the Library too (text for search is added when the Library opens).
+        new Promise((r) => canvas.toBlob(r, 'image/png'))
+          .then((blob) => blob && saveToLibrary(blob))
+          .catch(() => {});
+        return png;
       })().then(
         (png) => sendResponse({ ok: true, png }),
         (err) => sendResponse({ ok: false, error: String((err && err.message) || err) })
@@ -1672,17 +1842,30 @@
   }
 
   async function init() {
-    const id = new URLSearchParams(location.search).get('id');
-    if (!id) { showEmpty(); return; }
+    const params = new URLSearchParams(location.search);
+    let id = params.get('id');
+    const libId = params.get('lib');
+    if (!id && !libId) { showEmpty(); return; }
 
-    const stored = await chrome.storage.local.get(id);
-    const data = stored[id];
+    let data = null, edit = null;
+    if (id) data = (await chrome.storage.local.get(id))[id];
+    // Opened from the Library, or an older capture that's only kept in the Library.
+    if ((!data || !data.image) && LIB) {
+      const entry = await LIB.get(libId || id).catch(() => null);
+      if (entry && entry.source && entry.source.image) {
+        id = entry.id;
+        data = { ...entry.source, image: URL.createObjectURL(entry.source.image) };
+        edit = entry.edit || null;
+      }
+    }
     if (!data || !data.image) {
-      showEmpty('This capture is no longer available. Only the most recent captures are kept. Capture the area again.');
+      showEmpty('This capture is no longer available. Copy or download a card to keep it in your Library.');
       return;
     }
 
-    const prefs = await chrome.storage.sync.get(DEFAULT_PREFS).catch(() => DEFAULT_PREFS);
+    const prefs = edit ? { ...DEFAULT_PREFS, ...edit.prefs }
+      : await chrome.storage.sync.get(DEFAULT_PREFS).catch(() => DEFAULT_PREFS);
+    setLibSettings((await chrome.storage.sync.get({ library: LIB_DEFAULTS }).catch(() => ({}))).library);
     document.title = 'OneShot Redux: ' + (hostname(data.url) || 'Editor');
 
     try {
@@ -1691,6 +1874,14 @@
       showEmpty('The captured image could not be loaded. Please capture again.');
       return;
     }
+    if (edit) {
+      state.highlights = Array.isArray(edit.highlights) ? edit.highlights : [];
+      state.groupSeq = 1 + state.highlights.reduce((m, h) => Math.max(m, h.g || 0), 0);
+      if (typeof edit.title === 'string') state.title = edit.title;
+      if (typeof edit.domain === 'string') state.domain = edit.domain;
+      state.libId = id;
+      state.libSaved = true;
+    }
 
     bindUI();
     computeLayout();
@@ -1698,7 +1889,11 @@
     runOCR();
   }
 
-  if (new URLSearchParams(location.search).has('render')) {
+  const renderMode = new URLSearchParams(location.search).get('render');
+  if (renderMode === 'frame') {
+    // Hidden inside the Library page: renders cards on request, nothing else.
+    self.OSRRenderEntry = renderEntry;
+  } else if (renderMode) {
     startRenderer();
   } else {
     init().catch((err) => {

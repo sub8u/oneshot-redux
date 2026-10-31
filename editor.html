@@ -9,13 +9,11 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <img src="icons/icon32.png" alt="" width="22" height="22">
-      <span>OneShot Redux</span>
-    </div>
+    <a class="brand" id="brandLink" href="library.html" title="Open your Library">OneShot <i>Redux</i></a>
     <div class="actions">
+      <button id="libraryBtn" class="btn ghost" type="button">Library</button>
       <button id="aboutBtn" class="btn ghost" type="button">About</button>
-      <button id="copyBtn" class="btn" type="button" disabled>Copy</button>
+      <button id="copyBtn" class="btn" type="button" disabled>Copy card</button>
       <button id="downloadBtn" class="btn primary" type="button" disabled>Download PNG</button>
     </div>
   </header>
@@ -92,9 +90,10 @@
         <label class="check"><input type="checkbox" id="tighten"> Trim to content</label>
         <label class="check"><input type="checkbox" id="torn"> Torn paper edges</label>
         <label class="check"><input type="checkbox" id="showQr"> QR code to the source</label>
+        <label class="check"><input type="checkbox" id="libSave"> Save copied cards to Library</label>
       </div>
 
-      <p class="foot muted">Tip: <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undoes the last highlight.</p>
+      <p class="foot muted">With <kbd>⌘</kbd> or <kbd>Ctrl</kbd>: <kbd>C</kbd> copies, <kbd>S</kbd> downloads, <kbd>Z</kbd> undoes a highlight.</p>
     </aside>
   </main>
 
@@ -115,6 +114,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="lib/library-db.js"></script>
   <script src="lib/qrcode/qrcode.js"></script>
   <script src="lib/tesseract/tesseract.min.js"></script>
   <script src="editor.js"></script>

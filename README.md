@@ -1,5 +1,8 @@
 # OneShot Redux
 
+**Screenshots deserve a library.** Highlight the interesting parts of the web, turn them
+into beautiful cards worth sharing, and find any quote again, even when you've forgotten where you read it.
+
 Select any part of a webpage and turn it into a polished quote card: a torn-paper
 clipping with hand-drawn highlights, the article's headline, site, publish date and
 icon on top, a background that picks up the publisher's colors, and a QR code back
@@ -20,6 +23,14 @@ Free and open source. Everything runs on your computer; nothing is uploaded.
 | ![](docs/card-northwind.png) | ![](docs/card-wire.png) | ![](docs/card-fieldnote.png) |
 
 ![The editor](docs/editor.png)
+
+### Your Library
+
+Every card you copy or download is saved automatically, with its text. Search by any
+words you remember from the quote, the headline or the site, then reopen a card to keep
+editing, copy it again, or jump back to the source.
+
+![Searching the Library](docs/library.png)
 
 <sub>Publications and quotes in these images are fictional, made up for the demo.</sub>
 
@@ -58,7 +69,8 @@ In the editor:
 | **Texture** | Grain, Dots, Grid, Binary or Circuit, faint and fading toward the quote |
 | **Trim to content** (on by default) | Trims a rough selection to the text with even margins |
 | Edit the headline or domain | The header updates |
-| **Copy** or **⌘C**, **Download PNG** or **⌘S** | Export the card |
+| **Copy card** or **⌘C**, **Download PNG** or **⌘S** | Export the card |
+| **Library** (or **⌘⇧L** / **Ctrl+Shift+L**) | Search and reopen every card you've copied or downloaded |
 | **About** | Version and credits |
 
 Your style choices are remembered between cards.
@@ -73,7 +85,13 @@ Your style choices are remembered between cards.
   **Allow access to file URLs**.
 - **Quick copy says "Couldn't copy on this page":** a few sites block clipboard access.
   Click **Open in editor** in the toast and copy from there.
-- **Old captures disappear:** only the 8 most recent captures are kept.
+- **Where are my cards?** Every card you copy or download (including quick copy) is in your
+  **Library**. Captures you never copied or downloaded aren't kept long-term.
+- **Back up your Library:** use **Export all** on the Library page. It downloads a zip with every
+  card plus `library.csv` (quotes, sources, dates). Removing the extension deletes the Library.
+- **Library taking too much space?** Each card is stored lightly (the capture plus your edits; the
+  finished card is re-created exactly when you copy, download or export it). On the Library page you
+  can turn off **Save new cards**, or set **Keep** to your newest 500 or 100 cards.
 - **Errors:** on `chrome://extensions`, click **Errors** on the OneShot Redux card and share the message.
 
 ## Permissions
@@ -84,7 +102,7 @@ capture** (`activeTab`), so installing it shows no "read all your data" warning.
 | Permission | Why |
 |---|---|
 | `activeTab`, `scripting` | Show the selector and take the screenshot on the page you're capturing |
-| `storage`, `unlimitedStorage` | Remember your style and your recent captures (screenshots can be large) |
+| `storage`, `unlimitedStorage` | Remember your style and keep your Library (cards can be large) |
 | `offscreen` | Render quick-copy cards without opening a tab |
 | `favicon` | Chrome's built-in site icons, as a fallback |
 
@@ -97,6 +115,9 @@ See [PRIVACY.md](PRIVACY.md).
 - `content.js` draws the selector inside a Shadow DOM so site styles can't interfere,
   removes it *before* the screenshot, and reads the page's title, publish date
   (`article:published_time`, JSON-LD `datePublished` and similar), theme color and icons.
+- `library.js` shows your saved cards (stored in the browser's IndexedDB, on your computer),
+  searches their text, makes quick-copy cards searchable in the background, and builds the
+  Export zip.
 - `editor.js` renders the whole card on one canvas, so what you see is exactly what's
   exported. It trims the capture to its content, runs text detection in a background
   worker for word highlighting, and derives the Auto color. Quick copy runs the same

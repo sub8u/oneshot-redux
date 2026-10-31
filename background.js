@@ -19,6 +19,7 @@ chrome.action.onClicked.addListener((tab) => startCapture(tab));
 
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === 'start-capture') startCapture(tab);
+  else if (command === 'open-library') chrome.tabs.create({ url: chrome.runtime.getURL('library.html') });
 });
 
 async function startCapture(tab) {
