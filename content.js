@@ -38,33 +38,36 @@
       position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
       z-index: 2147483647; pointer-events: none;
       font: 500 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #fff; background: rgba(20, 18, 32, 0.88);
-      padding: 9px 16px; border-radius: 999px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+      color: #24221e; background: #f8f6f0;
+      padding: 10px 18px; border-radius: 999px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.28);
     }
     .hint b { font-weight: 700; }
     .hint kbd {
-      font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-      background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22);
+      font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #5f5a51; background: #efebe2; border: 1px solid #e2ddd1; border-bottom-width: 2px;
       border-radius: 4px; padding: 2px 5px; margin: 0 1px;
     }
-    .hint.quick { background: linear-gradient(135deg, rgba(61,36,112,0.95), rgba(122,79,214,0.95)); }
+    .hint.quick { box-shadow: 0 0 0 3px hsl(48, 95%, 62%), 0 10px 30px rgba(0,0,0,0.28); }
     .toast {
       position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 8px);
       z-index: 2147483647; pointer-events: none; opacity: 0;
       transition: opacity .2s ease, transform .2s ease;
       font: 500 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #fff; background: rgba(20, 18, 32, 0.92);
-      padding: 10px 16px; border-radius: 10px; max-width: 80vw;
+      color: #24221e; background: #f8f6f0;
+      padding: 11px 18px; border-radius: 3px; max-width: 80vw;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.3);
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
     .toast.actionable { pointer-events: auto; display: flex; align-items: center; gap: 14px; }
     .toast button {
-      all: unset; cursor: pointer; font-weight: 700; color: #c9b6ff;
+      all: unset; cursor: pointer; font-weight: 700; color: #24221e;
       padding: 2px 4px; border-radius: 4px;
+      text-decoration: underline; text-decoration-color: hsl(48, 95%, 62%);
+      text-decoration-thickness: 3px; text-underline-offset: 3px;
     }
-    .toast button:hover { color: #fff; text-decoration: underline; }
-    .toast button:focus-visible { outline: 2px solid #c9b6ff; outline-offset: 2px; }
+    .toast button:hover { background: #efebe2; }
+    .toast button:focus-visible { outline: 2px solid #2a63d4; outline-offset: 2px; }
   `;
 
   // ---------- Build shadow UI (no innerHTML, safe on Trusted Types pages) ----------
@@ -131,7 +134,7 @@
         k('F'), txt(' whole view  ·  '), k('Enter'), txt(' off  ·  '), k('Esc'));
     } else {
       hintEl.append(el('b', '', 'Drag'), txt(' to select  ·  '), k('F'), txt(' whole view  ·  '),
-        k('Enter'), txt(' quick copy  ·  '), k('Esc'), txt(' cancel'));
+        k('Enter'), txt(' quick copy  ·  '), k('L'), txt(' Library  ·  '), k('Esc'), txt(' cancel'));
     }
   }
 
@@ -287,6 +290,11 @@
       e.stopPropagation();
       quick = !quick;
       renderHint();
+    } else if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault();
+      e.stopPropagation();
+      cancel();
+      try { chrome.runtime.sendMessage({ type: 'OSR_OPEN_LIBRARY' }); } catch (_) { /* extension reloaded */ }
     } else if (e.key === 'f' || e.key === 'F') {
       e.preventDefault();
       e.stopPropagation();

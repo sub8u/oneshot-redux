@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "OneShot Redux",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Select any part of a webpage and turn it into a beautiful, shareable quote card.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
     "unlimitedStorage",
+    "contextMenus",
     "favicon",
     "offscreen"
   ],

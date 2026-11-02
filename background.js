@@ -19,8 +19,26 @@ chrome.action.onClicked.addListener((tab) => startCapture(tab));
 
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === 'start-capture') startCapture(tab);
-  else if (command === 'open-library') chrome.tabs.create({ url: chrome.runtime.getURL('library.html') });
+  else if (command === 'open-library') openLibrary(tab);
 });
+
+// Right-click the toolbar icon: open the Library, or change the shortcuts.
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: 'osr-library', title: 'Open your Library', contexts: ['action'] });
+    chrome.contextMenus.create({ id: 'osr-shortcuts', title: 'Keyboard shortcuts…', contexts: ['action'] });
+  });
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === 'osr-library') openLibrary(tab);
+  else if (info.menuItemId === 'osr-shortcuts') chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+});
+
+function openLibrary(tab) {
+  const opts = { url: chrome.runtime.getURL('library.html') };
+  if (tab && tab.index != null && tab.windowId != null) { opts.index = tab.index + 1; opts.windowId = tab.windowId; }
+  return chrome.tabs.create(opts).catch(() => chrome.tabs.create({ url: opts.url }));
+}
 
 async function startCapture(tab) {
   if (!tab || !tab.id) {
@@ -65,6 +83,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .then(sendResponse)
       .catch((err) => sendResponse({ ok: false, error: String((err && err.message) || err) }));
     return true; // keep the channel open for the async response
+  }
+  if (msg && msg.type === 'OSR_OPEN_LIBRARY') {
+    openLibrary(sender.tab).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: false }));
+    return true;
   }
   if (msg && msg.type === 'OSR_OPEN_EDITOR' && msg.id) {
     openEditor(msg.id, sender.tab).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: false }));

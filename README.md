@@ -62,6 +62,8 @@ For a permanent install, wrap it with Xcode:
 | Drag a rectangle over some text | A new tab opens with your quote card |
 | Press **F** while selecting | Captures the whole visible page |
 | Press **Enter** while selecting, then drag (or press F) | **Quick copy:** the finished card, in your last-used style, goes straight to the clipboard. The toast offers **Edit** |
+| Press **L** while selecting | Opens your Library |
+| Right-click the toolbar icon → **Open your Library**, or press **⌘⇧L** / **Ctrl+Shift+L** | Opens your Library from any page |
 | Press **Esc** | Cancels |
 
 In the editor:
@@ -93,7 +95,8 @@ Your style choices are remembered between cards.
 - **Quick copy says "Couldn't copy on this page":** a few sites block clipboard access.
   Click **Open in editor** in the toast and copy from there.
 - **Where are my cards?** Every card you copy or download (including quick copy) is in your
-  **Library**. Captures you never copied or downloaded aren't kept long-term.
+  **Library**: right-click the toolbar icon and choose **Open your Library**, or press **⌘⇧L** /
+  **Ctrl+Shift+L**. Captures you never copied or downloaded aren't kept long-term.
 - **Back up your Library:** use **Export all** on the Library page. It downloads a zip with every
   card plus `library.csv` (quotes, sources, dates). Removing the extension deletes the Library.
 - **Library taking too much space?** Each card is stored lightly (the capture plus your edits; the
@@ -111,6 +114,7 @@ capture** (`activeTab`), so installing it shows no "read all your data" warning.
 | `activeTab`, `scripting` | Show the selector and take the screenshot on the page you're capturing |
 | `storage`, `unlimitedStorage` | Remember your style and keep your Library (cards can be large) |
 | `offscreen` | Render quick-copy cards without opening a tab |
+| `contextMenus` | Add **Open your Library** to the toolbar icon's right-click menu |
 | `favicon` | Chrome's built-in site icons, as a fallback |
 
 See [PRIVACY.md](PRIVACY.md).
