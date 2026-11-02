@@ -10,13 +10,15 @@ to the source.
 
 Free and open source. Everything runs on your computer; nothing is uploaded.
 
+**[Add to Chrome from the Chrome Web Store](https://chromewebstore.google.com/detail/oneshot-redux/goheambjacpgdcaeemgmnmnhgbgiegop)** (also works in Edge, Brave and Arc)
+
 *Inspired by OneShot (2015) by Jason Goldman and Ian Ownbey, designed by Daniel Zarick.*
 
 ![A quote card made with OneShot Redux](docs/card-ledger.png)
 
 ## See it in action
 
-![Select a passage, highlight words, copy the card](docs/demo.gif)
+![Select a passage, highlight words, copy the card, then find it in the Library](docs/demo.gif)
 
 | Auto color from the site | Black-and-white logo | Your own color + texture |
 |---|---|---|
@@ -34,7 +36,12 @@ editing, copy it again, or jump back to the source.
 
 <sub>Publications and quotes in these images are fictional, made up for the demo.</sub>
 
-## Install (from source)
+## Install
+
+**Easiest:** get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/oneshot-redux/goheambjacpgdcaeemgmnmnhgbgiegop), then pin it: click the
+puzzle-piece icon in the toolbar, then the pin next to OneShot Redux.
+
+**From source** (for developers):
 
 1. Download or unzip this folder (`oneshot-redux`).
 2. In Chrome, Edge, Brave or Arc, open `chrome://extensions`.
